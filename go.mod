@@ -59,7 +59,7 @@ require (
 )
 
 require (
-	filippo.io/edwards25519 v1.1.0
+	filippo.io/edwards25519 v1.2.0
 	github.com/AlekSi/pointer v1.2.0
 	github.com/buger/jsonparser v1.1.2
 	github.com/davecgh/go-spew v1.1.1
