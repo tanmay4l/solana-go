@@ -143,6 +143,21 @@ func TestPrivateKeyFromSolanaKeygenFile(t *testing.T) {
 	}
 }
 
+func TestPrivateKeyFromBase58RejectsMismatchedSeedAndPublicKey(t *testing.T) {
+	original := MustPrivateKeyFromBase58("66cDvko73yAf8LYvFMM3r8vF5vJtkk7JKMgEKwkmBC86oHdq41C7i1a2vS3zE1yCcdLLk6VUatUb32ZzVjSBXtRs")
+	require.Len(t, original, PrivateKeyLength)
+
+	tampered := append([]byte(nil), original...)
+	tampered[0] ^= 0xFF
+
+	valid, err := ValidatePrivateKey(tampered)
+	require.False(t, valid)
+	require.EqualError(t, err, "invalid private key: seed/public key mismatch")
+
+	_, err = PrivateKeyFromBase58(PrivateKey(tampered).String())
+	require.EqualError(t, err, "invalid private key: seed/public key mismatch")
+}
+
 func TestPublicKey_MarshalText(t *testing.T) {
 	keyString := "4wBqpZM9k69W87zdYXT2bRtLViWqTiJV3i2Kn9q7S6j"
 	keyParsed := MustPublicKeyFromBase58(keyString)
