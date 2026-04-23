@@ -72,10 +72,14 @@ func ValidatePrivateKey(b []byte) (bool, error) {
 	if len(b) != ed25519.PrivateKeySize {
 		return false, fmt.Errorf("invalid private key size, expected %v, got %d", ed25519.PrivateKeySize, len(b))
 	}
-	// check if the public key is on the ed25519 curve
-	pub := ed25519.PrivateKey(b).Public().(ed25519.PublicKey)
-	if !IsOnCurve(pub) {
-		return false, errors.New("the corresponding public key is NOT on the ed25519 curve")
+
+	// ed25519 private keys are seed(32) + public(32); ensure they match.
+	derived := ed25519.NewKeyFromSeed(b[:ed25519.SeedSize])
+	if !bytes.Equal(derived, b) {
+		if !IsOnCurve(b[ed25519.SeedSize:]) {
+			return false, errors.New("invalid private key: seed/public key mismatch (provided public key is NOT on the ed25519 curve)")
+		}
+		return false, errors.New("invalid private key: seed/public key mismatch")
 	}
 	return true, nil
 }
@@ -703,10 +707,7 @@ func IsOnCurve(b []byte) bool {
 	vv = vv.Add(vv, feOne)
 
 	_, wasSquare := new(field.Element).SqrtRatio(u, vv)
-	if wasSquare == 0 {
-		return false
-	}
-	return true
+	return wasSquare != 0
 }
 
 // Find a valid program address and its corresponding bump seed.
